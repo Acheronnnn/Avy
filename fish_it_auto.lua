@@ -1,5 +1,6 @@
 --[[
     ╔═══════════════════════════════════════════════════════════╗
+    ║                          AVY                              ║
     ║                   Fish It Auto Script                     ║
     ║                      Version 1.0                          ║
     ║              Created for Delta Executor                   ║
@@ -10,7 +11,7 @@
     2. Paste script loadstring:
        loadstring(game:HttpGet("https://raw.githubusercontent.com/Acheronnnn/Avy/main/fish_it_auto.lua"))()
     3. Execute script
-    4. UI akan muncul di layar, klik tombol untuk toggle auto fishing
+    4. UI akan muncul di layar, toggle untuk aktifkan auto fishing
     
     CARA KERJA:
     - Script mendeteksi fishing rod yang equipped
@@ -21,7 +22,7 @@
     
     FITUR:
     ✓ Auto Fishing (Cast & Reel)
-    ✓ UI Toggle Button
+    ✓ Simple Toggle UI
     ✓ Draggable UI
     ✓ Lightweight & Stable
     ✓ Easy to expand
@@ -49,8 +50,8 @@ local Config = {
     RetryDelay = 1,            -- Delay sebelum cast ulang (detik)
     
     -- UI Settings
-    UIPosition = UDim2.new(0.5, -100, 0, 50),
-    UISize = UDim2.new(0, 220, 0, 120),
+    UIPosition = UDim2.new(0.5, -110, 0, 50),
+    UISize = UDim2.new(0, 220, 0, 90),
 }
 
 -- ═══════════════════════════════════════════════════════════
@@ -101,7 +102,7 @@ end
 
 -- Fungsi untuk log pesan
 local function log(message)
-    print("[Fish It Auto] " .. message)
+    print("[Avy] " .. message)
 end
 
 -- ═══════════════════════════════════════════════════════════
@@ -193,13 +194,13 @@ end
 -- ═══════════════════════════════════════════════════════════
 
 -- Hapus UI lama jika ada
-if game.CoreGui:FindFirstChild("FishItAutoUI") then
-    game.CoreGui:FindFirstChild("FishItAutoUI"):Destroy()
+if game.CoreGui:FindFirstChild("AvyUI") then
+    game.CoreGui:FindFirstChild("AvyUI"):Destroy()
 end
 
 -- Create ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "FishItAutoUI"
+ScreenGui.Name = "AvyUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = game.CoreGui
@@ -209,76 +210,68 @@ local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = Config.UISize
 MainFrame.Position = Config.UIPosition
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainFrame
 
--- Shadow effect
-local Shadow = Instance.new("ImageLabel")
-Shadow.Name = "Shadow"
-Shadow.BackgroundTransparency = 1
-Shadow.Position = UDim2.new(0, -15, 0, -15)
-Shadow.Size = UDim2.new(1, 30, 1, 30)
-Shadow.ZIndex = 0
-Shadow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
-Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-Shadow.ImageTransparency = 0.5
-Shadow.Parent = MainFrame
+-- Gradient Background
+local Gradient = Instance.new("UIGradient")
+Gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 25, 40)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 25))
+}
+Gradient.Rotation = 45
+Gradient.Parent = MainFrame
 
--- Title Bar
-local TitleBar = Instance.new("Frame")
-TitleBar.Name = "TitleBar"
-TitleBar.Size = UDim2.new(1, 0, 0, 35)
-TitleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-TitleBar.BorderSizePixel = 0
-TitleBar.Parent = MainFrame
+-- Border/Stroke
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(60, 60, 80)
+Stroke.Thickness = 1.5
+Stroke.Transparency = 0.5
+Stroke.Parent = MainFrame
 
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 10)
-TitleCorner.Parent = TitleBar
-
--- Title Text
+-- Title Text (AVY)
 local TitleText = Instance.new("TextLabel")
 TitleText.Name = "TitleText"
-TitleText.Size = UDim2.new(1, -20, 1, 0)
-TitleText.Position = UDim2.new(0, 10, 0, 0)
+TitleText.Size = UDim2.new(1, 0, 0, 35)
+TitleText.Position = UDim2.new(0, 0, 0, 0)
 TitleText.BackgroundTransparency = 1
-TitleText.Text = "🎣 Fish It Auto"
+TitleText.Text = "AVY"
 TitleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleText.TextSize = 16
+TitleText.TextSize = 20
 TitleText.Font = Enum.Font.GothamBold
-TitleText.TextXAlignment = Enum.TextXAlignment.Left
-TitleText.Parent = TitleBar
+TitleText.TextXAlignment = Enum.TextXAlignment.Center
+TitleText.Parent = MainFrame
 
--- Status Text
-local StatusText = Instance.new("TextLabel")
-StatusText.Name = "StatusText"
-StatusText.Size = UDim2.new(1, -20, 0, 20)
-StatusText.Position = UDim2.new(0, 10, 0, 45)
-StatusText.BackgroundTransparency = 1
-StatusText.Text = "Status: Idle"
-StatusText.TextColor3 = Color3.fromRGB(200, 200, 200)
-StatusText.TextSize = 13
-StatusText.Font = Enum.Font.Gotham
-StatusText.TextXAlignment = Enum.TextXAlignment.Left
-StatusText.Parent = MainFrame
+-- Subtitle (Fish It)
+local SubtitleText = Instance.new("TextLabel")
+SubtitleText.Name = "SubtitleText"
+SubtitleText.Size = UDim2.new(1, 0, 0, 15)
+SubtitleText.Position = UDim2.new(0, 0, 0, 25)
+SubtitleText.BackgroundTransparency = 1
+SubtitleText.Text = "Fish It Auto"
+SubtitleText.TextColor3 = Color3.fromRGB(150, 150, 170)
+SubtitleText.TextSize = 11
+SubtitleText.Font = Enum.Font.Gotham
+SubtitleText.TextXAlignment = Enum.TextXAlignment.Center
+SubtitleText.Parent = MainFrame
 
 -- Toggle Button
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Name = "ToggleButton"
-ToggleButton.Size = UDim2.new(0, 180, 0, 45)
-ToggleButton.Position = UDim2.new(0.5, -90, 0, 70)
+ToggleButton.Size = UDim2.new(0, 180, 0, 38)
+ToggleButton.Position = UDim2.new(0.5, -90, 0, 48)
 ToggleButton.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
 ToggleButton.BorderSizePixel = 0
-ToggleButton.Text = "▶ Start Auto Fish"
+ToggleButton.Text = "OFF"
 ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.TextSize = 15
+ToggleButton.TextSize = 14
 ToggleButton.Font = Enum.Font.GothamBold
 ToggleButton.AutoButtonColor = false
 ToggleButton.Parent = MainFrame
@@ -286,6 +279,19 @@ ToggleButton.Parent = MainFrame
 local ButtonCorner = Instance.new("UICorner")
 ButtonCorner.CornerRadius = UDim.new(0, 8)
 ButtonCorner.Parent = ToggleButton
+
+-- Button Gradient
+local ButtonGradient = Instance.new("UIGradient")
+ButtonGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 200))
+}
+ButtonGradient.Rotation = 90
+ButtonGradient.Transparency = NumberSequence.new{
+    NumberSequenceKeypoint.new(0, 0.8),
+    NumberSequenceKeypoint.new(1, 0.9)
+}
+ButtonGradient.Parent = ToggleButton
 
 -- ═══════════════════════════════════════════════════════════
 -- UI INTERACTIONS
@@ -297,19 +303,15 @@ ToggleButton.MouseButton1Click:Connect(function()
     
     if Config.Enabled then
         -- Start auto fishing
-        ToggleButton.Text = "⏸ Stop Auto Fish"
+        ToggleButton.Text = "ON"
         ToggleButton.BackgroundColor3 = Color3.fromRGB(60, 220, 60)
-        StatusText.Text = "Status: Running..."
-        StatusText.TextColor3 = Color3.fromRGB(100, 255, 100)
         
         -- Jalankan loop di thread terpisah
         task.spawn(autoFishLoop)
     else
         -- Stop auto fishing
-        ToggleButton.Text = "▶ Start Auto Fish"
+        ToggleButton.Text = "OFF"
         ToggleButton.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
-        StatusText.Text = "Status: Stopped"
-        StatusText.TextColor3 = Color3.fromRGB(255, 100, 100)
     end
 end)
 
@@ -337,5 +339,6 @@ end)
 -- INITIALIZATION COMPLETE
 -- ═══════════════════════════════════════════════════════════
 log("Script loaded successfully!")
-log("UI created. Click the button to start auto fishing.")
+log("Toggle the button to enable/disable auto fishing.")
 log("Repository: https://github.com/Acheronnnn/Avy")
+
