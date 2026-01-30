@@ -9,7 +9,7 @@
     CARA PENGGUNAAN:
     1. Buka executor Delta di Roblox
     2. Paste script loadstring:
-       loadstring(game:HttpGet("https://raw.githubusercontent.com/Acheronnnn/Avy/main/fish_it_auto.lua"))()
+       loadstring(game:HttpGet("https://raw.githubusercontent.com/Acheronnnn/Avy/main/Avy"))()
     3. Execute script
     4. UI akan muncul di layar, toggle untuk aktifkan auto fishing
     
