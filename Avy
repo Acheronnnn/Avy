@@ -344,7 +344,7 @@ ContentPadding.Parent = Content
 local function createPage(name)
     local page = Instance.new("Frame")
     page.Name = name .. "Page"
-    page.Size = UDim2.new(1, 0, 0, 0)
+    page.Size = UDim2.new(1, -24, 0, 0)
     page.AutomaticSize = Enum.AutomaticSize.Y
     page.BackgroundTransparency = 1
     page.Visible = (name == "Info")
