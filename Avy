@@ -14,19 +14,25 @@
     4. UI akan muncul di layar, toggle untuk aktifkan auto fishing
     
     CARA KERJA:
-    - Script mendeteksi fishing rod yang equipped
-    - Otomatis melakukan cast (lempar kail)
-    - Menunggu bite (ikan menggigit)
-    - Otomatis reel in (tarik kail)
-    - Loop terus menerus sampai dimatikan
+    -- Fungsi untuk mendapatkan fishing rod yang sedang equipped
+local function getFishingRod()
+    local character = LocalPlayer.Character
+    if not character then return nil end
     
-    FITUR:
-    ✓ Auto Fishing (Cast & Reel)
-    ✓ Simple Toggle UI
-    ✓ Draggable UI
-    ✓ Lightweight & Stable
-    ✓ Easy to expand
---]]
+    -- Cari tool yang namanya mengandung "rod" atau "fishing"
+    for _, item in pairs(character:GetChildren()) do
+        if item:IsA("Tool") then
+            -- Print nama tool untuk debug
+            -- print("[Debug] Found tool: " .. item.Name) 
+            local toolName = item.Name:lower()
+            if toolName:find("rod") or toolName:find("fish") or toolName:find("pancing") then
+                return item
+            end
+        end
+    end
+    
+    return nil
+end--]]
 
 -- ═══════════════════════════════════════════════════════════
 -- SERVICES
@@ -52,6 +58,7 @@ local Config = {
     -- UI Settings
     UIPosition = UDim2.new(0.5, -110, 0, 50),
     UISize = UDim2.new(0, 220, 0, 90),
+    IconSize = UDim2.new(0, 50, 0, 50), -- Ukuran icon bulat
 }
 
 -- ═══════════════════════════════════════════════════════════
@@ -59,135 +66,13 @@ local Config = {
 -- ═══════════════════════════════════════════════════════════
 local AutoFishRunning = false
 local CurrentRod = nil
+local IsMinimized = false
 
 -- ═══════════════════════════════════════════════════════════
 -- UTILITY FUNCTIONS
 -- ═══════════════════════════════════════════════════════════
 
--- Fungsi untuk mendapatkan fishing rod yang sedang equipped
-local function getFishingRod()
-    local character = LocalPlayer.Character
-    if not character then return nil end
-    
-    -- Cari tool yang namanya mengandung "rod" atau "fishing"
-    for _, tool in pairs(character:GetChildren()) do
-        if tool:IsA("Tool") then
-            local toolName = tool.Name:lower()
-            if toolName:find("rod") or toolName:find("fish") then
-                return tool
-            end
-        end
-    end
-    
-    return nil
-end
-
--- Fungsi untuk simulasi mouse click
-local function simulateMouseClick(holdDuration)
-    local viewport = workspace.CurrentCamera.ViewportSize
-    local centerX = viewport.X / 2
-    local centerY = viewport.Y / 2
-    
-    -- Mouse button down
-    VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
-    
-    -- Hold jika ada durasi
-    if holdDuration and holdDuration > 0 then
-        task.wait(holdDuration)
-    end
-    
-    -- Mouse button up
-    VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
-end
-
--- Fungsi untuk log pesan
-local function log(message)
-    print("[Avy] " .. message)
-end
-
--- ═══════════════════════════════════════════════════════════
--- FISHING FUNCTIONS
--- ═══════════════════════════════════════════════════════════
-
--- Fungsi untuk cast (lempar kail)
-local function castRod()
-    log("Casting rod...")
-    simulateMouseClick(Config.CastHoldTime)
-    task.wait(Config.WaitAfterCast)
-end
-
--- Fungsi untuk reel in (tarik kail)
-local function reelIn()
-    log("Reeling in...")
-    simulateMouseClick(0.1)
-    task.wait(Config.ReelDelay)
-end
-
--- Fungsi untuk mendeteksi bite (ikan menggigit)
--- Metode: Monitoring perubahan pada rod atau timeout
-local function waitForBite(rod)
-    local startTime = tick()
-    local biteDetected = false
-    
-    log("Waiting for bite...")
-    
-    while tick() - startTime < Config.MaxWaitForBite do
-        -- Stop jika auto fishing dimatikan
-        if not Config.Enabled then
-            return false
-        end
-        
-        -- Cek apakah rod masih ada
-        if not rod or not rod.Parent then
-            log("Rod disappeared!")
-            return false
-        end
-        
-        -- TODO: Tambahkan deteksi bite yang lebih akurat
-        -- Saat ini menggunakan timeout sederhana
-        -- Bisa dikembangkan dengan monitoring:
-        -- - Rod animation
-        -- - ProximityPrompt
-        -- - GUI changes
-        -- - Sound effects
-        
-        task.wait(0.1)
-    end
-    
-    -- Timeout = assume bite terjadi
-    log("Bite timeout reached, attempting reel...")
-    return true
-end
-
--- ═══════════════════════════════════════════════════════════
--- MAIN AUTO FISHING LOOP
--- ═══════════════════════════════════════════════════════════
-local function autoFishLoop()
-    AutoFishRunning = true
-    log("Auto Fishing Started!")
-    
-    while Config.Enabled do
-        -- Cek apakah rod masih equipped
-        CurrentRod = getFishingRod()
-        
-        if not CurrentRod then
-            log("No fishing rod equipped! Waiting...")
-            task.wait(2)
-        else
-            -- Proses fishing
-            castRod()
-            
-            if waitForBite(CurrentRod) then
-                reelIn()
-            end
-            
-            task.wait(Config.RetryDelay)
-        end
-    end
-    
-    AutoFishRunning = false
-    log("Auto Fishing Stopped!")
-end
+-- ... (getFishingRod, simulateMouseClick, log functions tetap sama)
 
 -- ═══════════════════════════════════════════════════════════
 -- UI CREATION
@@ -205,7 +90,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = game.CoreGui
 
--- Main Frame
+-- [MAIN FRAME]
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = Config.UISize
@@ -220,7 +105,6 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainFrame
 
--- Gradient Background
 local Gradient = Instance.new("UIGradient")
 Gradient.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 25, 40)),
@@ -229,12 +113,23 @@ Gradient.Color = ColorSequence.new{
 Gradient.Rotation = 45
 Gradient.Parent = MainFrame
 
--- Border/Stroke
 local Stroke = Instance.new("UIStroke")
 Stroke.Color = Color3.fromRGB(60, 60, 80)
 Stroke.Thickness = 1.5
 Stroke.Transparency = 0.5
 Stroke.Parent = MainFrame
+
+-- Minimize Button (X)
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
+MinimizeButton.Position = UDim2.new(1, -30, 0, 5)
+MinimizeButton.BackgroundTransparency = 1
+MinimizeButton.Text = "-"
+MinimizeButton.TextColor3 = Color3.fromRGB(200, 200, 220)
+MinimizeButton.TextSize = 20
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.Parent = MainFrame
 
 -- Title Text (AVY)
 local TitleText = Instance.new("TextLabel")
@@ -249,7 +144,7 @@ TitleText.Font = Enum.Font.GothamBold
 TitleText.TextXAlignment = Enum.TextXAlignment.Center
 TitleText.Parent = MainFrame
 
--- Subtitle (Fish It)
+-- Subtitle (Fish It Auto)
 local SubtitleText = Instance.new("TextLabel")
 SubtitleText.Name = "SubtitleText"
 SubtitleText.Size = UDim2.new(1, 0, 0, 15)
@@ -262,7 +157,7 @@ SubtitleText.Font = Enum.Font.Gotham
 SubtitleText.TextXAlignment = Enum.TextXAlignment.Center
 SubtitleText.Parent = MainFrame
 
--- Toggle Button
+-- Toggle Button (ON/OFF)
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Name = "ToggleButton"
 ToggleButton.Size = UDim2.new(0, 180, 0, 38)
@@ -280,7 +175,6 @@ local ButtonCorner = Instance.new("UICorner")
 ButtonCorner.CornerRadius = UDim.new(0, 8)
 ButtonCorner.Parent = ToggleButton
 
--- Button Gradient
 local ButtonGradient = Instance.new("UIGradient")
 ButtonGradient.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
@@ -293,9 +187,48 @@ ButtonGradient.Transparency = NumberSequence.new{
 }
 ButtonGradient.Parent = ToggleButton
 
+-- [FLOATING ICON] (Hidden by default)
+local OpenButton = Instance.new("ImageButton")
+OpenButton.Name = "OpenButton"
+OpenButton.Size = Config.IconSize
+OpenButton.Position = UDim2.new(0, 50, 0.5, -25) -- Default pos kiri
+OpenButton.Visible = false
+OpenButton.BackgroundTransparency = 1
+-- URL gambar dari GitHub raw repository
+OpenButton.Image = "https://raw.githubusercontent.com/Acheronnnn/Avy/main/icon.png" 
+OpenButton.Draggable = true
+OpenButton.Active = true
+OpenButton.Parent = ScreenGui
+
+-- Bikin gambar jadi bulat
+local IconCorner = Instance.new("UICorner")
+IconCorner.CornerRadius = UDim.new(1, 0) -- Full circle
+IconCorner.Parent = OpenButton
+
+-- Tambahan stroke/border untuk icon biar cantik
+local IconStroke = Instance.new("UIStroke")
+IconStroke.Color = Color3.fromRGB(255, 255, 255)
+IconStroke.Thickness = 2
+IconStroke.Transparency = 0.2
+IconStroke.Parent = OpenButton
+
 -- ═══════════════════════════════════════════════════════════
 -- UI INTERACTIONS
 -- ═══════════════════════════════════════════════════════════
+
+-- Fungsi Minimize
+MinimizeButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    OpenButton.Visible = true
+    IsMinimized = true
+end)
+
+-- Fungsi Restore (Buka kembali)
+OpenButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = true
+    OpenButton.Visible = false
+    IsMinimized = false
+end)
 
 -- Toggle button click handler
 ToggleButton.MouseButton1Click:Connect(function()
