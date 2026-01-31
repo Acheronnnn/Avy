@@ -286,28 +286,41 @@ ButtonGradient.Transparency = NumberSequence.new{
 ButtonGradient.Parent = ToggleButton
 
 -- [FLOATING ICON] (Hidden by default)
-local OpenButton = Instance.new("ImageButton")
+local OpenButton = Instance.new("TextButton")
 OpenButton.Name = "OpenButton"
 OpenButton.Size = Config.IconSize
-OpenButton.Position = UDim2.new(0, 50, 0.5, -25) -- Default pos kiri
+OpenButton.Position = UDim2.new(0, 20, 0.5, -25) -- Default pos kiri
 OpenButton.Visible = false
-OpenButton.BackgroundTransparency = 1
--- URL gambar dari GitHub raw repository
-OpenButton.Image = "https://raw.githubusercontent.com/Acheronnnn/Avy/main/icon.png" 
+OpenButton.BackgroundColor3 = Color3.fromRGB(45, 27, 105) -- Deep purple
+OpenButton.Text = "A"
+OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+OpenButton.TextSize = 24
+OpenButton.Font = Enum.Font.GothamBold
+OpenButton.AutoButtonColor = false
 OpenButton.Draggable = true
 OpenButton.Active = true
 OpenButton.Parent = ScreenGui
 
--- Bikin gambar jadi bulat
+-- Bikin button jadi bulat
 local IconCorner = Instance.new("UICorner")
 IconCorner.CornerRadius = UDim.new(1, 0) -- Full circle
 IconCorner.Parent = OpenButton
 
--- Tambahan stroke/border untuk icon biar cantik
+-- Gradient untuk efek shadow aura
+local IconGradient = Instance.new("UIGradient")
+IconGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(107, 79, 187)), -- Purple glow
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(45, 27, 105)), -- Deep purple
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 25)) -- Dark
+}
+IconGradient.Rotation = 45
+IconGradient.Parent = OpenButton
+
+-- Border glow cyan
 local IconStroke = Instance.new("UIStroke")
-IconStroke.Color = Color3.fromRGB(255, 255, 255)
+IconStroke.Color = Color3.fromRGB(60, 170, 220) -- Cyan glow
 IconStroke.Thickness = 2
-IconStroke.Transparency = 0.2
+IconStroke.Transparency = 0.3
 IconStroke.Parent = OpenButton
 
 -- ═══════════════════════════════════════════════════════════
