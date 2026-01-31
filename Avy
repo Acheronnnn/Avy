@@ -34,6 +34,7 @@ local Config = {
     AutoFish = false,
     AutoSell = false,
     AutoCollect = false,
+    AutoEquipRod = false,
     
     -- Timing
     CastHoldTime = 0.8,
@@ -119,6 +120,40 @@ local function getFishingRod()
         end
     end
     return nil
+end
+
+local function findRodInBackpack()
+    local backpack = LocalPlayer.Backpack
+    if not backpack then return nil end
+    for _, item in pairs(backpack:GetChildren()) do
+        if item:IsA("Tool") then
+            local name = item.Name:lower()
+            if name:find("rod") or name:find("fish") or name:find("pancing") then
+                return item
+            end
+        end
+    end
+    return nil
+end
+
+local function equipRod()
+    local character = LocalPlayer.Character
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return false end
+    
+    -- Check if already equipped
+    local equipped = getFishingRod()
+    if equipped then return true end
+    
+    -- Find in backpack
+    local rod = findRodInBackpack()
+    if rod then
+        humanoid:EquipTool(rod)
+        log("Equipped: " .. rod.Name)
+        return true
+    end
+    
+    return false
 end
 
 local function simulateClick(holdTime)
@@ -571,6 +606,7 @@ footer.Parent = infoPage
 local mainPage = createPage("Main")
 createToggle(mainPage, "Auto Fish", "Automatically cast and reel", 1, "AutoFish")
 createToggle(mainPage, "Auto Sell", "Sell when inventory full", 2, "AutoSell")
+createToggle(mainPage, "Auto Equip Rod", "Equip fishing rod automatically", 3, "AutoEquipRod")
 
 -- ═══════════════════════════════════════════════════════════
 -- AUTO PAGE
@@ -718,6 +754,21 @@ task.spawn(function()
         local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
         fpsRow.Value.Text = fps .. " / " .. ping .. " ms"
         task.wait(5)
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════════
+-- AUTO EQUIP ROD LOOP (Every 3 seconds - Lightweight)
+-- ═══════════════════════════════════════════════════════════
+task.spawn(function()
+    while ScreenGui.Parent do
+        if Config.AutoEquipRod then
+            local rod = getFishingRod()
+            if not rod then
+                equipRod()
+            end
+        end
+        task.wait(3)
     end
 end)
 
