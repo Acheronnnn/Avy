@@ -43,7 +43,7 @@ local Config = {
     RetryDelay = 1,
     
     -- UI
-    UISize = UDim2.new(0, 520, 0, 340),
+    UISize = UDim2.new(0, 520, 0, 300),
     IconSize = UDim2.new(0, 50, 0, 50),
 }
 
@@ -169,7 +169,7 @@ ScreenGui.Parent = game.CoreGui
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = Config.UISize
-MainFrame.Position = UDim2.new(0.5, -260, 0.5, -170)
+MainFrame.Position = UDim2.new(0.5, -260, 0.5, -150)
 MainFrame.BackgroundColor3 = Colors.BgDark
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
