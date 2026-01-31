@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avy UI Design</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Main Container - Dark Theme */
+        .avy-container {
+            width: 480px;
+            background: rgba(18, 18, 28, 0.98);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: rgba(25, 25, 38, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Logo - Ocean Blue */
+        .logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #4facfe, #00c6fb);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 16px;
+        }
+
+        .title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e8e8e8;
+        }
+
+        .title span {
+            color: #666;
+            font-weight: 400;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 6px;
+        }
+
+        .control-btn {
+            width: 26px;
+            height: 26px;
+            background: transparent;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.15s;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #aaa;
+        }
+
+        .control-btn.close:hover {
+            background: rgba(220, 60, 60, 0.2);
+            color: #ff6b6b;
+        }
+
+        /* Body */
+        .body {
+            display: flex;
+            height: 280px;
+            /* Fixed height */
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 130px;
+            background: rgba(22, 22, 32, 0.6);
+            border-right: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 12px 8px;
+            overflow-y: auto;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+            color: #999;
+        }
+
+        .menu-item.active {
+            background: rgba(79, 172, 254, 0.12);
+            color: #4facfe;
+            border-left: 3px solid #4facfe;
+        }
+
+        .menu-item i {
+            width: 16px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        /* Content - Scrollable */
+        .content {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        /* Custom scrollbar */
+        .content::-webkit-scrollbar,
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .content::-webkit-scrollbar-track,
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .content::-webkit-scrollbar-thumb,
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+
+        .content::-webkit-scrollbar-thumb:hover,
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Info Page */
+        .info-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .info-logo {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #4facfe, #00c6fb);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 24px;
+            margin: 0 auto 10px;
+        }
+
+        .info-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #e8e8e8;
+            margin-bottom: 4px;
+        }
+
+        .info-subtitle {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .info-table {
+            background: rgba(28, 28, 40, 0.6);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 11px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #666;
+        }
+
+        .info-value {
+            color: #bbb;
+            font-weight: 500;
+        }
+
+        .info-value.highlight {
+            color: #4facfe;
+        }
+
+        .info-value.success {
+            color: #3cdc3c;
+        }
+
+        .info-footer {
+            text-align: center;
+            font-size: 10px;
+            color: #444;
+            margin-top: 16px;
+        }
+
+        /* Section Title */
+        .section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #555;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        /* Toggle Card */
+        .toggle-card {
+            background: rgba(28, 28, 40, 0.6);
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .toggle-info h3 {
+            font-size: 12px;
+            color: #ccc;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .toggle-info p {
+            font-size: 10px;
+            color: #555;
+        }
+
+        .toggle-switch {
+            width: 40px;
+            height: 22px;
+            background: #2a2a3a;
+            border-radius: 11px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toggle-switch.active {
+            background: linear-gradient(90deg, #4facfe, #00c6fb);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: all 0.2s;
+        }
+
+        .toggle-switch.active::after {
+            left: 21px;
+        }
+
+        /* Minimized Icon - Ocean Blue Soft */
+        .minimized-preview {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+        }
+
+        .mini-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #87ceeb, #4facfe, #00c6fb);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            transition: transform 0.2s;
+        }
+
+        .mini-icon:hover {
+            transform: scale(1.08);
+        }
+
+        .preview-label {
+            text-align: center;
+            color: #555;
+            font-size: 10px;
+            margin-top: 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="avy-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <div class="logo">A</div>
+                <div class="title">Avy <span>| Fish It</span></div>
+            </div>
+            <div class="header-controls">
+                <button class="control-btn" title="Minimize"><i class="fas fa-minus"></i></button>
+                <button class="control-btn close" title="Close"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="body">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="menu-item active" data-page="info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Info</span>
+                </div>
+                <div class="menu-item" data-page="main">
+                    <i class="fas fa-home"></i>
+                    <span>Main</span>
+                </div>
+                <div class="menu-item" data-page="auto">
+                    <i class="fas fa-robot"></i>
+                    <span>Auto</span>
+                </div>
+                <div class="menu-item" data-page="teleport">
+                    <i class="fas fa-location-dot"></i>
+                    <span>Teleport</span>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Info Page -->
+                <div class="page active" id="info">
+                    <div class="info-header">
+                        <div class="info-logo">A</div>
+                        <div class="info-title">Avy</div>
+                        <div class="info-subtitle">Fish It Automation Hub</div>
+                    </div>
+                    <div class="info-table">
+                        <div class="info-row">
+                            <span class="info-label">Version</span>
+                            <span class="info-value">v1.0.0</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Status</span>
+                            <span class="info-value success">Stable</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Last Update</span>
+                            <span class="info-value">31 Jan 2026</span>
+                        </div>
+                    </div>
+                    <div class="info-table">
+                        <div class="info-row">
+                            <span class="info-label">Player</span>
+                            <span class="info-value highlight" id="playerName">Acheronnnn</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">FPS / Ping</span>
+                            <span class="info-value"><span id="fps">60</span> / <span id="ping">45</span> ms</span>
+                        </div>
+                    </div>
+                    <div class="info-footer">Developed by Avy</div>
+                </div>
+
+                <!-- Main Page -->
+                <div class="page" id="main">
+                    <div class="section-title">Quick Actions</div>
+                    <div class="toggle-card">
+                        <div class="toggle-info">
+                            <h3>Auto Fish</h3>
+                            <p>Automatically cast and reel</p>
+                        </div>
+                        <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+                    </div>
+                    <div class="toggle-card">
+                        <div class="toggle-info">
+                            <h3>Auto Sell</h3>
+                            <p>Sell when inventory full</p>
+                        </div>
+                        <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+                    </div>
+                </div>
+
+                <!-- Auto Page -->
+                <div class="page" id="auto">
+                    <div class="section-title">Automation</div>
+                    <div class="toggle-card">
+                        <div class="toggle-info">
+                            <h3>Auto Fish</h3>
+                            <p>Cast and reel automatically</p>
+                        </div>
+                        <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+                    </div>
+                    <div class="toggle-card">
+                        <div class="toggle-info">
+                            <h3>Auto Sell</h3>
+                            <p>Sell fish automatically</p>
+                        </div>
+                        <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+                    </div>
+                    <div class="toggle-card">
+                        <div class="toggle-info">
+                            <h3>Auto Collect</h3>
+                            <p>Collect items nearby</p>
+                        </div>
+                        <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+                    </div>
+                </div>
+
+                <!-- Teleport Page -->
+                <div class="page" id="teleport">
+                    <div class="section-title">Teleport Locations</div>
+                    <div class="toggle-card" style="cursor: pointer;">
+                        <div class="toggle-info">
+                            <h3>Spawn</h3>
+                            <p>Return to spawn point</p>
+                        </div>
+                        <i class="fas fa-chevron-right" style="color: #555; font-size: 12px;"></i>
+                    </div>
+                    <div class="toggle-card" style="cursor: pointer;">
+                        <div class="toggle-info">
+                            <h3>Shop</h3>
+                            <p>Go to fish shop</p>
+                        </div>
+                        <i class="fas fa-chevron-right" style="color: #555; font-size: 12px;"></i>
+                    </div>
+                    <div class="toggle-card" style="cursor: pointer;">
+                        <div class="toggle-info">
+                            <h3>Fishing Spot</h3>
+                            <p>Best fishing location</p>
+                        </div>
+                        <i class="fas fa-chevron-right" style="color: #555; font-size: 12px;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Minimized Icon - Ocean Blue -->
+    <div class="minimized-preview">
+        <div class="mini-icon">A</div>
+        <div class="preview-label">Minimized</div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                item.classList.add('active');
+                document.getElementById(item.dataset.page).classList.add('active');
+            });
+        });
+    </script>
+</body>
+
+</html>
