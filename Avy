@@ -13,26 +13,14 @@
     3. Execute script
     4. UI akan muncul di layar, toggle untuk aktifkan auto fishing
     
-    CARA KERJA:
-    -- Fungsi untuk mendapatkan fishing rod yang sedang equipped
-local function getFishingRod()
-    local character = LocalPlayer.Character
-    if not character then return nil end
-    
-    -- Cari tool yang namanya mengandung "rod" atau "fishing"
-    for _, item in pairs(character:GetChildren()) do
-        if item:IsA("Tool") then
-            -- Print nama tool untuk debug
-            -- print("[Debug] Found tool: " .. item.Name) 
-            local toolName = item.Name:lower()
-            if toolName:find("rod") or toolName:find("fish") or toolName:find("pancing") then
-                return item
-            end
-        end
-    end
-    
-    return nil
-end--]]
+    CARA FITUR:
+    ✓ Auto Fishing (Cast & Reel)
+    ✓ Simple Toggle UI
+    ✓ Draggable UI
+    ✓ Lightweight & Stable
+    ✓ Easy to expand
+    ✓ Minimized Mode with Custom Icon
+--]]
 
 -- ═══════════════════════════════════════════════════════════
 -- SERVICES
@@ -72,7 +60,27 @@ local IsMinimized = false
 -- UTILITY FUNCTIONS
 -- ═══════════════════════════════════════════════════════════
 
--- ... (getFishingRod, simulateMouseClick, log functions tetap sama)
+-- Fungsi untuk mendapatkan fishing rod yang sedang equipped
+local function getFishingRod()
+    local character = LocalPlayer.Character
+    if not character then return nil end
+    
+    -- Cari tool yang namanya mengandung "rod" atau "fishing"
+    for _, item in pairs(character:GetChildren()) do
+        if item:IsA("Tool") then
+            -- Print nama tool untuk debug
+            -- print("[Debug] Found tool: " .. item.Name) 
+            local toolName = item.Name:lower()
+            if toolName:find("rod") or toolName:find("fish") or toolName:find("pancing") then
+                return item
+            end
+        end
+    end
+    
+    return nil
+end
+
+-- ... (simulateMouseClick, log functions tetap sama)
 
 -- ═══════════════════════════════════════════════════════════
 -- UI CREATION
