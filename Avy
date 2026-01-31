@@ -1,25 +1,20 @@
 --[[
     ╔═══════════════════════════════════════════════════════════╗
     ║                          AVY                              ║
-    ║                   Fish It Auto Script                     ║
-    ║                      Version 1.0                          ║
+    ║               Fish It Automation Hub                      ║
+    ║                      Version 1.0.0                        ║
     ║              Created for Delta Executor                   ║
     ╚═══════════════════════════════════════════════════════════╝
     
-    CARA PENGGUNAAN:
-    1. Buka executor Delta di Roblox
-    2. Paste script loadstring:
-       loadstring(game:HttpGet("https://raw.githubusercontent.com/Acheronnnn/Avy/main/Avy"))()
-    3. Execute script
-    4. UI akan muncul di layar, toggle untuk aktifkan auto fishing
+    USAGE:
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Acheronnnn/Avy/main/Avy"))()
     
-    CARA FITUR:
-    ✓ Auto Fishing (Cast & Reel)
-    ✓ Simple Toggle UI
-    ✓ Draggable UI
-    ✓ Lightweight & Stable
-    ✓ Easy to expand
-    ✓ Minimized Mode with Custom Icon
+    FEATURES:
+    - Auto Fish (Cast & Reel)
+    - Auto Sell
+    - Teleport Locations
+    - Lightweight & Optimized
+    - Modern UI with Pages
 --]]
 
 -- ═══════════════════════════════════════════════════════════
@@ -29,146 +24,126 @@ local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
 local LocalPlayer = Players.LocalPlayer
 
 -- ═══════════════════════════════════════════════════════════
 -- CONFIGURATION
 -- ═══════════════════════════════════════════════════════════
 local Config = {
-    -- Auto Fishing Settings
-    Enabled = false,
-    CastHoldTime = 0.8,        -- Durasi hold mouse saat cast (detik)
-    WaitAfterCast = 1.5,       -- Delay setelah cast sebelum cek bite (detik)
-    MaxWaitForBite = 20,       -- Maksimal waktu tunggu bite (detik)
-    ReelDelay = 0.5,           -- Delay setelah reel (detik)
-    RetryDelay = 1,            -- Delay sebelum cast ulang (detik)
+    AutoFish = false,
+    AutoSell = false,
+    AutoCollect = false,
     
-    -- UI Settings
-    UIPosition = UDim2.new(0.5, -110, 0, 50),
-    UISize = UDim2.new(0, 220, 0, 90),
-    IconSize = UDim2.new(0, 50, 0, 50), -- Ukuran icon bulat
+    -- Timing
+    CastHoldTime = 0.8,
+    WaitAfterCast = 1.5,
+    MaxWaitForBite = 20,
+    ReelDelay = 0.5,
+    RetryDelay = 1,
+    
+    -- UI
+    UISize = UDim2.new(0, 420, 0, 320),
+    IconSize = UDim2.new(0, 50, 0, 50),
+}
+
+-- ═══════════════════════════════════════════════════════════
+-- COLORS (Ocean Blue Accent + Dark Theme)
+-- ═══════════════════════════════════════════════════════════
+local Colors = {
+    -- Background
+    BgDark = Color3.fromRGB(18, 18, 28),
+    BgMedium = Color3.fromRGB(25, 25, 38),
+    BgCard = Color3.fromRGB(28, 28, 40),
+    
+    -- Text
+    TextWhite = Color3.fromRGB(232, 232, 232),
+    TextGray = Color3.fromRGB(102, 102, 102),
+    TextMuted = Color3.fromRGB(85, 85, 85),
+    
+    -- Accent (Ocean Blue)
+    AccentBlue = Color3.fromRGB(79, 172, 254),
+    AccentCyan = Color3.fromRGB(0, 198, 251),
+    
+    -- Status
+    Success = Color3.fromRGB(60, 220, 60),
+    Error = Color3.fromRGB(220, 60, 60),
+    
+    -- Border
+    Border = Color3.fromRGB(255, 255, 255),
 }
 
 -- ═══════════════════════════════════════════════════════════
 -- VARIABLES
 -- ═══════════════════════════════════════════════════════════
-local AutoFishRunning = false
-local CurrentRod = nil
+local CurrentPage = "Info"
 local IsMinimized = false
+local MenuButtons = {}
+local Pages = {}
 
 -- ═══════════════════════════════════════════════════════════
 -- UTILITY FUNCTIONS
 -- ═══════════════════════════════════════════════════════════
-
--- Fungsi untuk mendapatkan fishing rod yang sedang equipped
-local function getFishingRod()
-    local character = LocalPlayer.Character
-    if not character then return nil end
-    
-    -- Cari tool yang namanya mengandung "rod" atau "fishing"
-    for _, item in pairs(character:GetChildren()) do
-        if item:IsA("Tool") then
-            -- Print nama tool untuk debug
-            -- print("[Debug] Found tool: " .. item.Name) 
-            local toolName = item.Name:lower()
-            if toolName:find("rod") or toolName:find("fish") or toolName:find("pancing") then
-                return item
-            end
-        end
-    end
-    
-    return nil
+local function log(msg)
+    print("[Avy] " .. tostring(msg))
 end
 
--- Fungsi untuk simulasi mouse click
-local function simulateMouseClick(holdDuration)
-    local viewport = workspace.CurrentCamera.ViewportSize
-    local centerX = viewport.X / 2
-    local centerY = viewport.Y / 2
-    
-    -- Mouse button down
-    VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
-    
-    -- Hold jika ada durasi
-    if holdDuration and holdDuration > 0 then
-        task.wait(holdDuration)
-    end
-    
-    -- Mouse button up
-    VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
+local function createCorner(parent, radius)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius or 8)
+    corner.Parent = parent
+    return corner
 end
 
--- Fungsi untuk log pesan
-local function log(message)
-    print("[Avy] " .. message)
+local function createStroke(parent, color, thickness, transparency)
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = color or Colors.Border
+    stroke.Thickness = thickness or 1
+    stroke.Transparency = transparency or 0.92
+    stroke.Parent = parent
+    return stroke
 end
 
 -- ═══════════════════════════════════════════════════════════
 -- FISHING FUNCTIONS
 -- ═══════════════════════════════════════════════════════════
-
--- Fungsi untuk cast (lempar kail)
-local function castRod()
-    log("Casting rod...")
-    simulateMouseClick(Config.CastHoldTime)
-    task.wait(Config.WaitAfterCast)
-end
-
--- Fungsi untuk reel in (tarik kail)
-local function reelIn()
-    log("Reeling in...")
-    simulateMouseClick(0.1)
-    task.wait(Config.ReelDelay)
-end
-
--- Fungsi untuk mendeteksi bite (ikan menggigit)
-local function waitForBite(rod)
-    local startTime = tick()
-    
-    log("Waiting for bite...")
-    
-    while tick() - startTime < Config.MaxWaitForBite do
-        if not Config.Enabled then return false end
-        if not rod or not rod.Parent then return false end
-        
-        -- Deteksi bite sederhana (bisa dikembangkan)
-        -- Saat ini hanya menunggu delay
-        
-        task.wait(0.1)
+local function getFishingRod()
+    local character = LocalPlayer.Character
+    if not character then return nil end
+    for _, item in pairs(character:GetChildren()) do
+        if item:IsA("Tool") then
+            local name = item.Name:lower()
+            if name:find("rod") or name:find("fish") or name:find("pancing") then
+                return item
+            end
+        end
     end
-    
-    -- Timeout = assume bite terjadi
-    log("Bite timeout reached, attempting reel...")
-    return true
+    return nil
 end
 
--- ═══════════════════════════════════════════════════════════
--- MAIN AUTO FISHING LOOP
--- ═══════════════════════════════════════════════════════════
+local function simulateClick(holdTime)
+    local viewport = workspace.CurrentCamera.ViewportSize
+    local x, y = viewport.X / 2, viewport.Y / 2
+    VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 0)
+    if holdTime and holdTime > 0 then task.wait(holdTime) end
+    VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 0)
+end
+
 local function autoFishLoop()
-    AutoFishRunning = true
     log("Auto Fishing Started!")
-    
-    while Config.Enabled do
+    while Config.AutoFish do
         local rod = getFishingRod()
-        
         if not rod then
-            log("No fishing rod equipped! Waiting...")
             task.wait(2)
         else
-            -- Cast
-            castRod()
-            
-            -- Wait for bite
-            if waitForBite(rod) then
-                reelIn()
-            end
-            
+            simulateClick(Config.CastHoldTime)
+            task.wait(Config.WaitAfterCast)
+            task.wait(Config.MaxWaitForBite)
+            simulateClick(0.1)
+            task.wait(Config.ReelDelay)
             task.wait(Config.RetryDelay)
         end
     end
-    
-    AutoFishRunning = false
     log("Auto Fishing Stopped!")
 end
 
@@ -176,232 +151,581 @@ end
 -- UI CREATION
 -- ═══════════════════════════════════════════════════════════
 
--- Hapus UI lama jika ada
+-- Cleanup old UI
 if game.CoreGui:FindFirstChild("AvyUI") then
     game.CoreGui:FindFirstChild("AvyUI"):Destroy()
 end
 
--- Create ScreenGui
+-- ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AvyUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = game.CoreGui
 
--- [MAIN FRAME]
+-- ═══════════════════════════════════════════════════════════
+-- MAIN FRAME
+-- ═══════════════════════════════════════════════════════════
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = Config.UISize
-MainFrame.Position = Config.UIPosition
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+MainFrame.Position = UDim2.new(0.5, -210, 0.5, -160)
+MainFrame.BackgroundColor3 = Colors.BgDark
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
-
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 12)
-MainCorner.Parent = MainFrame
-
-local Gradient = Instance.new("UIGradient")
-Gradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 25, 40)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 25))
-}
-Gradient.Rotation = 45
-Gradient.Parent = MainFrame
-
-local Stroke = Instance.new("UIStroke")
-Stroke.Color = Color3.fromRGB(60, 60, 80)
-Stroke.Thickness = 1.5
-Stroke.Transparency = 0.5
-Stroke.Parent = MainFrame
-
--- Minimize Button (-)
-local MinimizeButton = Instance.new("TextButton")
-MinimizeButton.Name = "MinimizeButton"
-MinimizeButton.Size = UDim2.new(0, 20, 0, 20)
-MinimizeButton.Position = UDim2.new(1, -50, 0, 5)
-MinimizeButton.BackgroundTransparency = 1
-MinimizeButton.Text = "-"
-MinimizeButton.TextColor3 = Color3.fromRGB(200, 200, 220)
-MinimizeButton.TextSize = 20
-MinimizeButton.Font = Enum.Font.GothamBold
-MinimizeButton.Parent = MainFrame
-
--- Close Button (X)
-local CloseButton = Instance.new("TextButton")
-CloseButton.Name = "CloseButton"
-CloseButton.Size = UDim2.new(0, 20, 0, 20)
-CloseButton.Position = UDim2.new(1, -25, 0, 5)
-CloseButton.BackgroundTransparency = 1
-CloseButton.Text = "×"
-CloseButton.TextColor3 = Color3.fromRGB(220, 100, 100)
-CloseButton.TextSize = 18
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.Parent = MainFrame
-
--- Title Text (AVY)
-local TitleText = Instance.new("TextLabel")
-TitleText.Name = "TitleText"
-TitleText.Size = UDim2.new(1, 0, 0, 35)
-TitleText.Position = UDim2.new(0, 0, 0, 0)
-TitleText.BackgroundTransparency = 1
-TitleText.Text = "AVY"
-TitleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleText.TextSize = 20
-TitleText.Font = Enum.Font.GothamBold
-TitleText.TextXAlignment = Enum.TextXAlignment.Center
-TitleText.Parent = MainFrame
-
--- Subtitle (Fish It Auto)
-local SubtitleText = Instance.new("TextLabel")
-SubtitleText.Name = "SubtitleText"
-SubtitleText.Size = UDim2.new(1, 0, 0, 15)
-SubtitleText.Position = UDim2.new(0, 0, 0, 25)
-SubtitleText.BackgroundTransparency = 1
-SubtitleText.Text = "Fish It Auto"
-SubtitleText.TextColor3 = Color3.fromRGB(150, 150, 170)
-SubtitleText.TextSize = 11
-SubtitleText.Font = Enum.Font.Gotham
-SubtitleText.TextXAlignment = Enum.TextXAlignment.Center
-SubtitleText.Parent = MainFrame
-
--- Toggle Button (ON/OFF)
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Name = "ToggleButton"
-ToggleButton.Size = UDim2.new(0, 180, 0, 38)
-ToggleButton.Position = UDim2.new(0.5, -90, 0, 48)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
-ToggleButton.BorderSizePixel = 0
-ToggleButton.Text = "OFF"
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.TextSize = 14
-ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.AutoButtonColor = false
-ToggleButton.Parent = MainFrame
-
-local ButtonCorner = Instance.new("UICorner")
-ButtonCorner.CornerRadius = UDim.new(0, 8)
-ButtonCorner.Parent = ToggleButton
-
-local ButtonGradient = Instance.new("UIGradient")
-ButtonGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 200))
-}
-ButtonGradient.Rotation = 90
-ButtonGradient.Transparency = NumberSequence.new{
-    NumberSequenceKeypoint.new(0, 0.8),
-    NumberSequenceKeypoint.new(1, 0.9)
-}
-ButtonGradient.Parent = ToggleButton
-
--- [FLOATING ICON] (Hidden by default)
-local OpenButton = Instance.new("TextButton")
-OpenButton.Name = "OpenButton"
-OpenButton.Size = Config.IconSize
-OpenButton.Position = UDim2.new(0, 20, 0.5, -25) -- Default pos kiri
-OpenButton.Visible = false
-OpenButton.BackgroundColor3 = Color3.fromRGB(45, 27, 105) -- Deep purple
-OpenButton.Text = "A"
-OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-OpenButton.TextSize = 24
-OpenButton.Font = Enum.Font.GothamBold
-OpenButton.AutoButtonColor = false
-OpenButton.Draggable = true
-OpenButton.Active = true
-OpenButton.Parent = ScreenGui
-
--- Bikin button jadi bulat
-local IconCorner = Instance.new("UICorner")
-IconCorner.CornerRadius = UDim.new(1, 0) -- Full circle
-IconCorner.Parent = OpenButton
-
--- Gradient untuk efek shadow aura
-local IconGradient = Instance.new("UIGradient")
-IconGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(107, 79, 187)), -- Purple glow
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(45, 27, 105)), -- Deep purple
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 25)) -- Dark
-}
-IconGradient.Rotation = 45
-IconGradient.Parent = OpenButton
-
--- Border glow cyan
-local IconStroke = Instance.new("UIStroke")
-IconStroke.Color = Color3.fromRGB(60, 170, 220) -- Cyan glow
-IconStroke.Thickness = 2
-IconStroke.Transparency = 0.3
-IconStroke.Parent = OpenButton
+createCorner(MainFrame, 12)
+createStroke(MainFrame, Colors.Border, 1, 0.92)
 
 -- ═══════════════════════════════════════════════════════════
--- UI INTERACTIONS
+-- HEADER
 -- ═══════════════════════════════════════════════════════════
+local Header = Instance.new("Frame")
+Header.Name = "Header"
+Header.Size = UDim2.new(1, 0, 0, 45)
+Header.BackgroundColor3 = Colors.BgMedium
+Header.BorderSizePixel = 0
+Header.Parent = MainFrame
+createCorner(Header, 12)
 
--- Fungsi Minimize
-MinimizeButton.MouseButton1Click:Connect(function()
+-- Fix corner overlap
+local HeaderFix = Instance.new("Frame")
+HeaderFix.Size = UDim2.new(1, 0, 0, 15)
+HeaderFix.Position = UDim2.new(0, 0, 1, -15)
+HeaderFix.BackgroundColor3 = Colors.BgMedium
+HeaderFix.BorderSizePixel = 0
+HeaderFix.Parent = Header
+
+-- Logo
+local Logo = Instance.new("Frame")
+Logo.Name = "Logo"
+Logo.Size = UDim2.new(0, 30, 0, 30)
+Logo.Position = UDim2.new(0, 12, 0.5, -15)
+Logo.BackgroundColor3 = Colors.AccentBlue
+Logo.BorderSizePixel = 0
+Logo.Parent = Header
+createCorner(Logo, 8)
+
+local LogoText = Instance.new("TextLabel")
+LogoText.Size = UDim2.new(1, 0, 1, 0)
+LogoText.BackgroundTransparency = 1
+LogoText.Text = "A"
+LogoText.TextColor3 = Color3.new(1, 1, 1)
+LogoText.TextSize = 16
+LogoText.Font = Enum.Font.GothamBold
+LogoText.Parent = Logo
+
+-- Title
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(0, 150, 0, 20)
+Title.Position = UDim2.new(0, 50, 0.5, -10)
+Title.BackgroundTransparency = 1
+Title.Text = "Avy | Fish It"
+Title.TextColor3 = Colors.TextWhite
+Title.TextSize = 14
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+-- Close Button
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Name = "CloseBtn"
+CloseBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseBtn.Position = UDim2.new(1, -35, 0.5, -13)
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Text = "×"
+CloseBtn.TextColor3 = Colors.TextGray
+CloseBtn.TextSize = 18
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Parent = Header
+
+-- Minimize Button
+local MinBtn = Instance.new("TextButton")
+MinBtn.Name = "MinBtn"
+MinBtn.Size = UDim2.new(0, 26, 0, 26)
+MinBtn.Position = UDim2.new(1, -65, 0.5, -13)
+MinBtn.BackgroundTransparency = 1
+MinBtn.Text = "-"
+MinBtn.TextColor3 = Colors.TextGray
+MinBtn.TextSize = 18
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.Parent = Header
+
+-- ═══════════════════════════════════════════════════════════
+-- BODY CONTAINER
+-- ═══════════════════════════════════════════════════════════
+local Body = Instance.new("Frame")
+Body.Name = "Body"
+Body.Size = UDim2.new(1, 0, 1, -45)
+Body.Position = UDim2.new(0, 0, 0, 45)
+Body.BackgroundTransparency = 1
+Body.Parent = MainFrame
+
+-- ═══════════════════════════════════════════════════════════
+-- SIDEBAR
+-- ═══════════════════════════════════════════════════════════
+local Sidebar = Instance.new("Frame")
+Sidebar.Name = "Sidebar"
+Sidebar.Size = UDim2.new(0, 100, 1, 0)
+Sidebar.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+Sidebar.BackgroundTransparency = 0.4
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = Body
+
+local function createMenuItem(name, icon, order)
+    local btn = Instance.new("TextButton")
+    btn.Name = name
+    btn.Size = UDim2.new(1, -16, 0, 36)
+    btn.Position = UDim2.new(0, 8, 0, 8 + (order - 1) * 40)
+    btn.BackgroundTransparency = 1
+    btn.Text = ""
+    btn.Parent = Sidebar
+    createCorner(btn, 8)
+    
+    local iconLabel = Instance.new("TextLabel")
+    iconLabel.Size = UDim2.new(0, 20, 1, 0)
+    iconLabel.Position = UDim2.new(0, 10, 0, 0)
+    iconLabel.BackgroundTransparency = 1
+    iconLabel.Text = icon
+    iconLabel.TextColor3 = Colors.TextGray
+    iconLabel.TextSize = 14
+    iconLabel.Font = Enum.Font.Gotham
+    iconLabel.Parent = btn
+    
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, -35, 1, 0)
+    textLabel.Position = UDim2.new(0, 32, 0, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = name
+    textLabel.TextColor3 = Colors.TextGray
+    textLabel.TextSize = 12
+    textLabel.Font = Enum.Font.Gotham
+    textLabel.TextXAlignment = Enum.TextXAlignment.Left
+    textLabel.Parent = btn
+    
+    MenuButtons[name] = {Button = btn, Icon = iconLabel, Text = textLabel}
+    return btn
+end
+
+createMenuItem("Info", "i", 1)
+createMenuItem("Main", "⌂", 2)
+createMenuItem("Auto", "⚙", 3)
+createMenuItem("Teleport", "◎", 4)
+
+-- ═══════════════════════════════════════════════════════════
+-- CONTENT AREA (Scrollable)
+-- ═══════════════════════════════════════════════════════════
+local Content = Instance.new("ScrollingFrame")
+Content.Name = "Content"
+Content.Size = UDim2.new(1, -100, 1, 0)
+Content.Position = UDim2.new(0, 100, 0, 0)
+Content.BackgroundTransparency = 1
+Content.BorderSizePixel = 0
+Content.ScrollBarThickness = 4
+Content.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
+Content.CanvasSize = UDim2.new(0, 0, 0, 0)
+Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Content.Parent = Body
+
+local ContentPadding = Instance.new("UIPadding")
+ContentPadding.PaddingTop = UDim.new(0, 12)
+ContentPadding.PaddingBottom = UDim.new(0, 12)
+ContentPadding.PaddingLeft = UDim.new(0, 12)
+ContentPadding.PaddingRight = UDim.new(0, 12)
+ContentPadding.Parent = Content
+
+-- ═══════════════════════════════════════════════════════════
+-- PAGE CREATION HELPERS
+-- ═══════════════════════════════════════════════════════════
+local function createPage(name)
+    local page = Instance.new("Frame")
+    page.Name = name .. "Page"
+    page.Size = UDim2.new(1, 0, 0, 0)
+    page.AutomaticSize = Enum.AutomaticSize.Y
+    page.BackgroundTransparency = 1
+    page.Visible = (name == "Info")
+    page.Parent = Content
+    
+    local layout = Instance.new("UIListLayout")
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 8)
+    layout.Parent = page
+    
+    Pages[name] = page
+    return page
+end
+
+local function createCard(parent, order)
+    local card = Instance.new("Frame")
+    card.Size = UDim2.new(1, 0, 0, 0)
+    card.AutomaticSize = Enum.AutomaticSize.Y
+    card.BackgroundColor3 = Colors.BgCard
+    card.BackgroundTransparency = 0.4
+    card.LayoutOrder = order or 0
+    card.Parent = parent
+    createCorner(card, 10)
+    createStroke(card, Colors.Border, 1, 0.96)
+    
+    local padding = Instance.new("UIPadding")
+    padding.PaddingTop = UDim.new(0, 12)
+    padding.PaddingBottom = UDim.new(0, 12)
+    padding.PaddingLeft = UDim.new(0, 14)
+    padding.PaddingRight = UDim.new(0, 14)
+    padding.Parent = card
+    
+    return card
+end
+
+local function createToggle(parent, title, desc, order, configKey)
+    local card = createCard(parent, order)
+    
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, -50, 0, 16)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = title
+    titleLabel.TextColor3 = Colors.TextWhite
+    titleLabel.TextSize = 12
+    titleLabel.Font = Enum.Font.GothamMedium
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.Parent = card
+    
+    local descLabel = Instance.new("TextLabel")
+    descLabel.Size = UDim2.new(1, -50, 0, 14)
+    descLabel.Position = UDim2.new(0, 0, 0, 18)
+    descLabel.BackgroundTransparency = 1
+    descLabel.Text = desc
+    descLabel.TextColor3 = Colors.TextMuted
+    descLabel.TextSize = 10
+    descLabel.Font = Enum.Font.Gotham
+    descLabel.TextXAlignment = Enum.TextXAlignment.Left
+    descLabel.Parent = card
+    
+    -- Toggle Switch
+    local toggle = Instance.new("Frame")
+    toggle.Size = UDim2.new(0, 40, 0, 22)
+    toggle.Position = UDim2.new(1, -40, 0.5, -11)
+    toggle.BackgroundColor3 = Color3.fromRGB(42, 42, 58)
+    toggle.Parent = card
+    createCorner(toggle, 11)
+    
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.new(0, 16, 0, 16)
+    knob.Position = UDim2.new(0, 3, 0.5, -8)
+    knob.BackgroundColor3 = Color3.new(1, 1, 1)
+    knob.Parent = toggle
+    createCorner(knob, 8)
+    
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Size = UDim2.new(1, 0, 1, 0)
+    toggleBtn.BackgroundTransparency = 1
+    toggleBtn.Text = ""
+    toggleBtn.Parent = toggle
+    
+    -- Toggle Logic
+    local isOn = Config[configKey] or false
+    
+    local function updateToggle()
+        if isOn then
+            toggle.BackgroundColor3 = Colors.AccentBlue
+            knob.Position = UDim2.new(0, 21, 0.5, -8)
+        else
+            toggle.BackgroundColor3 = Color3.fromRGB(42, 42, 58)
+            knob.Position = UDim2.new(0, 3, 0.5, -8)
+        end
+        Config[configKey] = isOn
+    end
+    
+    toggleBtn.MouseButton1Click:Connect(function()
+        isOn = not isOn
+        updateToggle()
+        
+        -- Special handling for AutoFish
+        if configKey == "AutoFish" and isOn then
+            task.spawn(autoFishLoop)
+        end
+    end)
+    
+    updateToggle()
+    return card
+end
+
+local function createInfoRow(parent, label, value, isHighlight, order)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, 0, 0, 22)
+    row.BackgroundTransparency = 1
+    row.LayoutOrder = order or 0
+    row.Parent = parent
+    
+    local labelText = Instance.new("TextLabel")
+    labelText.Size = UDim2.new(0.5, 0, 1, 0)
+    labelText.BackgroundTransparency = 1
+    labelText.Text = label
+    labelText.TextColor3 = Colors.TextGray
+    labelText.TextSize = 11
+    labelText.Font = Enum.Font.Gotham
+    labelText.TextXAlignment = Enum.TextXAlignment.Left
+    labelText.Parent = row
+    
+    local valueText = Instance.new("TextLabel")
+    valueText.Name = "Value"
+    valueText.Size = UDim2.new(0.5, 0, 1, 0)
+    valueText.Position = UDim2.new(0.5, 0, 0, 0)
+    valueText.BackgroundTransparency = 1
+    valueText.Text = value
+    valueText.TextColor3 = isHighlight and Colors.AccentBlue or Colors.TextWhite
+    valueText.TextSize = 11
+    valueText.Font = Enum.Font.GothamMedium
+    valueText.TextXAlignment = Enum.TextXAlignment.Right
+    valueText.Parent = row
+    
+    return row
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- INFO PAGE
+-- ═══════════════════════════════════════════════════════════
+local infoPage = createPage("Info")
+
+-- Header Card
+local infoHeader = Instance.new("Frame")
+infoHeader.Size = UDim2.new(1, 0, 0, 80)
+infoHeader.BackgroundTransparency = 1
+infoHeader.LayoutOrder = 1
+infoHeader.Parent = infoPage
+
+local infoLogo = Instance.new("Frame")
+infoLogo.Size = UDim2.new(0, 45, 0, 45)
+infoLogo.Position = UDim2.new(0.5, -22, 0, 0)
+infoLogo.BackgroundColor3 = Colors.AccentBlue
+infoLogo.Parent = infoHeader
+createCorner(infoLogo, 10)
+
+local infoLogoText = Instance.new("TextLabel")
+infoLogoText.Size = UDim2.new(1, 0, 1, 0)
+infoLogoText.BackgroundTransparency = 1
+infoLogoText.Text = "A"
+infoLogoText.TextColor3 = Color3.new(1, 1, 1)
+infoLogoText.TextSize = 22
+infoLogoText.Font = Enum.Font.GothamBold
+infoLogoText.Parent = infoLogo
+
+local infoTitle = Instance.new("TextLabel")
+infoTitle.Size = UDim2.new(1, 0, 0, 20)
+infoTitle.Position = UDim2.new(0, 0, 0, 50)
+infoTitle.BackgroundTransparency = 1
+infoTitle.Text = "Avy"
+infoTitle.TextColor3 = Colors.TextWhite
+infoTitle.TextSize = 16
+infoTitle.Font = Enum.Font.GothamBold
+infoTitle.Parent = infoHeader
+
+local infoSub = Instance.new("TextLabel")
+infoSub.Size = UDim2.new(1, 0, 0, 14)
+infoSub.Position = UDim2.new(0, 0, 0, 68)
+infoSub.BackgroundTransparency = 1
+infoSub.Text = "Fish It Automation Hub"
+infoSub.TextColor3 = Colors.TextGray
+infoSub.TextSize = 10
+infoSub.Font = Enum.Font.Gotham
+infoSub.Parent = infoHeader
+
+-- Version Card
+local versionCard = createCard(infoPage, 2)
+local versionLayout = Instance.new("UIListLayout")
+versionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+versionLayout.Padding = UDim.new(0, 4)
+versionLayout.Parent = versionCard
+
+createInfoRow(versionCard, "Version", "v1.0.0", false, 1)
+createInfoRow(versionCard, "Status", "Stable", false, 2).Value.TextColor3 = Colors.Success
+createInfoRow(versionCard, "Last Update", "31 Jan 2026", false, 3)
+
+-- Player Card
+local playerCard = createCard(infoPage, 3)
+local playerLayout = Instance.new("UIListLayout")
+playerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+playerLayout.Padding = UDim.new(0, 4)
+playerLayout.Parent = playerCard
+
+local playerRow = createInfoRow(playerCard, "Player", LocalPlayer.Name, true, 1)
+local fpsRow = createInfoRow(playerCard, "FPS / Ping", "-- / -- ms", false, 2)
+
+-- Footer
+local footer = Instance.new("TextLabel")
+footer.Size = UDim2.new(1, 0, 0, 20)
+footer.BackgroundTransparency = 1
+footer.Text = "Developed by Avy"
+footer.TextColor3 = Color3.fromRGB(68, 68, 68)
+footer.TextSize = 10
+footer.Font = Enum.Font.Gotham
+footer.LayoutOrder = 4
+footer.Parent = infoPage
+
+-- ═══════════════════════════════════════════════════════════
+-- MAIN PAGE
+-- ═══════════════════════════════════════════════════════════
+local mainPage = createPage("Main")
+createToggle(mainPage, "Auto Fish", "Automatically cast and reel", 1, "AutoFish")
+createToggle(mainPage, "Auto Sell", "Sell when inventory full", 2, "AutoSell")
+
+-- ═══════════════════════════════════════════════════════════
+-- AUTO PAGE
+-- ═══════════════════════════════════════════════════════════
+local autoPage = createPage("Auto")
+createToggle(autoPage, "Auto Fish", "Cast and reel automatically", 1, "AutoFish")
+createToggle(autoPage, "Auto Sell", "Sell fish automatically", 2, "AutoSell")
+createToggle(autoPage, "Auto Collect", "Collect items nearby", 3, "AutoCollect")
+
+-- ═══════════════════════════════════════════════════════════
+-- TELEPORT PAGE
+-- ═══════════════════════════════════════════════════════════
+local teleportPage = createPage("Teleport")
+
+local function createTeleportBtn(parent, title, desc, order)
+    local card = createCard(parent, order)
+    
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, -20, 0, 16)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = title
+    titleLabel.TextColor3 = Colors.TextWhite
+    titleLabel.TextSize = 12
+    titleLabel.Font = Enum.Font.GothamMedium
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.Parent = card
+    
+    local descLabel = Instance.new("TextLabel")
+    descLabel.Size = UDim2.new(1, -20, 0, 14)
+    descLabel.Position = UDim2.new(0, 0, 0, 18)
+    descLabel.BackgroundTransparency = 1
+    descLabel.Text = desc
+    descLabel.TextColor3 = Colors.TextMuted
+    descLabel.TextSize = 10
+    descLabel.Font = Enum.Font.Gotham
+    descLabel.TextXAlignment = Enum.TextXAlignment.Left
+    descLabel.Parent = card
+    
+    local arrow = Instance.new("TextLabel")
+    arrow.Size = UDim2.new(0, 20, 1, 0)
+    arrow.Position = UDim2.new(1, -20, 0, 0)
+    arrow.BackgroundTransparency = 1
+    arrow.Text = ">"
+    arrow.TextColor3 = Colors.TextMuted
+    arrow.TextSize = 12
+    arrow.Font = Enum.Font.Gotham
+    arrow.Parent = card
+    
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 1, 0)
+    btn.BackgroundTransparency = 1
+    btn.Text = ""
+    btn.Parent = card
+    
+    return btn
+end
+
+createTeleportBtn(teleportPage, "Spawn", "Return to spawn point", 1)
+createTeleportBtn(teleportPage, "Shop", "Go to fish shop", 2)
+createTeleportBtn(teleportPage, "Fishing Spot", "Best fishing location", 3)
+
+-- ═══════════════════════════════════════════════════════════
+-- MINIMIZED ICON (Ocean Blue)
+-- ═══════════════════════════════════════════════════════════
+local MiniIcon = Instance.new("TextButton")
+MiniIcon.Name = "MiniIcon"
+MiniIcon.Size = Config.IconSize
+MiniIcon.Position = UDim2.new(0, 20, 0.5, -25)
+MiniIcon.BackgroundColor3 = Colors.AccentBlue
+MiniIcon.Text = "A"
+MiniIcon.TextColor3 = Color3.new(1, 1, 1)
+MiniIcon.TextSize = 20
+MiniIcon.Font = Enum.Font.GothamBold
+MiniIcon.Visible = false
+MiniIcon.Active = true
+MiniIcon.Draggable = true
+MiniIcon.Parent = ScreenGui
+createCorner(MiniIcon, 25)
+createStroke(MiniIcon, Color3.new(1, 1, 1), 2, 0.75)
+
+-- ═══════════════════════════════════════════════════════════
+-- NAVIGATION LOGIC
+-- ═══════════════════════════════════════════════════════════
+local function switchPage(pageName)
+    CurrentPage = pageName
+    
+    -- Update menu styles
+    for name, data in pairs(MenuButtons) do
+        if name == pageName then
+            data.Button.BackgroundColor3 = Colors.AccentBlue
+            data.Button.BackgroundTransparency = 0.88
+            data.Icon.TextColor3 = Colors.AccentBlue
+            data.Text.TextColor3 = Colors.AccentBlue
+        else
+            data.Button.BackgroundTransparency = 1
+            data.Icon.TextColor3 = Colors.TextGray
+            data.Text.TextColor3 = Colors.TextGray
+        end
+    end
+    
+    -- Show/hide pages
+    for name, page in pairs(Pages) do
+        page.Visible = (name == pageName)
+    end
+end
+
+-- Connect menu buttons
+for name, data in pairs(MenuButtons) do
+    data.Button.MouseButton1Click:Connect(function()
+        switchPage(name)
+    end)
+end
+
+-- Initialize
+switchPage("Info")
+
+-- ═══════════════════════════════════════════════════════════
+-- BUTTON HANDLERS
+-- ═══════════════════════════════════════════════════════════
+CloseBtn.MouseButton1Click:Connect(function()
+    Config.AutoFish = false
+    Config.AutoSell = false
+    log("Script closed.")
+    ScreenGui:Destroy()
+end)
+
+MinBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = false
-    OpenButton.Visible = true
+    MiniIcon.Visible = true
     IsMinimized = true
 end)
 
--- Fungsi Restore (Buka kembali)
-OpenButton.MouseButton1Click:Connect(function()
+MiniIcon.MouseButton1Click:Connect(function()
     MainFrame.Visible = true
-    OpenButton.Visible = false
+    MiniIcon.Visible = false
     IsMinimized = false
 end)
 
--- Fungsi Close (Tutup script)
-CloseButton.MouseButton1Click:Connect(function()
-    Config.Enabled = false -- Stop auto fishing
-    log("Script closed by user.")
-    ScreenGui:Destroy() -- Hapus UI
-end)
-
--- Toggle button click handler
-ToggleButton.MouseButton1Click:Connect(function()
-    Config.Enabled = not Config.Enabled
-    
-    if Config.Enabled then
-        -- Start auto fishing
-        ToggleButton.Text = "ON"
-        ToggleButton.BackgroundColor3 = Color3.fromRGB(60, 220, 60)
-        
-        -- Jalankan loop di thread terpisah
-        task.spawn(autoFishLoop)
-    else
-        -- Stop auto fishing
-        ToggleButton.Text = "OFF"
-        ToggleButton.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
-    end
-end)
-
--- Button hover effect
-ToggleButton.MouseEnter:Connect(function()
-    ToggleButton.BackgroundColor3 = ToggleButton.BackgroundColor3:Lerp(Color3.fromRGB(255, 255, 255), 0.2)
-end)
-
-ToggleButton.MouseLeave:Connect(function()
-    if Config.Enabled then
-        ToggleButton.BackgroundColor3 = Color3.fromRGB(60, 220, 60)
-    else
-        ToggleButton.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+-- ═══════════════════════════════════════════════════════════
+-- FPS/PING UPDATE (Every 5 seconds - Lightweight)
+-- ═══════════════════════════════════════════════════════════
+task.spawn(function()
+    while ScreenGui.Parent do
+        local fps = math.floor(1 / RunService.RenderStepped:Wait())
+        local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+        fpsRow.Value.Text = fps .. " / " .. ping .. " ms"
+        task.wait(5)
     end
 end)
 
 -- ═══════════════════════════════════════════════════════════
--- CLEANUP ON PLAYER LEAVE
+-- CLEANUP
 -- ═══════════════════════════════════════════════════════════
 LocalPlayer.CharacterRemoving:Connect(function()
-    Config.Enabled = false
+    Config.AutoFish = false
+    Config.AutoSell = false
 end)
 
--- ═══════════════════════════════════════════════════════════
--- INITIALIZATION COMPLETE
--- ═══════════════════════════════════════════════════════════
-log("Script loaded successfully!")
-log("Toggle the button to enable/disable auto fishing.")
-log("Repository: https://github.com/Acheronnnn/Avy")
-
+log("Avy loaded successfully!")
+log("Toggle auto fishing from Main or Auto page.")
