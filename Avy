@@ -80,7 +80,97 @@ local function getFishingRod()
     return nil
 end
 
--- ... (simulateMouseClick, log functions tetap sama)
+-- Fungsi untuk simulasi mouse click
+local function simulateMouseClick(holdDuration)
+    local viewport = workspace.CurrentCamera.ViewportSize
+    local centerX = viewport.X / 2
+    local centerY = viewport.Y / 2
+    
+    -- Mouse button down
+    VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
+    
+    -- Hold jika ada durasi
+    if holdDuration and holdDuration > 0 then
+        task.wait(holdDuration)
+    end
+    
+    -- Mouse button up
+    VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
+end
+
+-- Fungsi untuk log pesan
+local function log(message)
+    print("[Avy] " .. message)
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- FISHING FUNCTIONS
+-- ═══════════════════════════════════════════════════════════
+
+-- Fungsi untuk cast (lempar kail)
+local function castRod()
+    log("Casting rod...")
+    simulateMouseClick(Config.CastHoldTime)
+    task.wait(Config.WaitAfterCast)
+end
+
+-- Fungsi untuk reel in (tarik kail)
+local function reelIn()
+    log("Reeling in...")
+    simulateMouseClick(0.1)
+    task.wait(Config.ReelDelay)
+end
+
+-- Fungsi untuk mendeteksi bite (ikan menggigit)
+local function waitForBite(rod)
+    local startTime = tick()
+    
+    log("Waiting for bite...")
+    
+    while tick() - startTime < Config.MaxWaitForBite do
+        if not Config.Enabled then return false end
+        if not rod or not rod.Parent then return false end
+        
+        -- Deteksi bite sederhana (bisa dikembangkan)
+        -- Saat ini hanya menunggu delay
+        
+        task.wait(0.1)
+    end
+    
+    -- Timeout = assume bite terjadi
+    log("Bite timeout reached, attempting reel...")
+    return true
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- MAIN AUTO FISHING LOOP
+-- ═══════════════════════════════════════════════════════════
+local function autoFishLoop()
+    AutoFishRunning = true
+    log("Auto Fishing Started!")
+    
+    while Config.Enabled do
+        local rod = getFishingRod()
+        
+        if not rod then
+            log("No fishing rod equipped! Waiting...")
+            task.wait(2)
+        else
+            -- Cast
+            castRod()
+            
+            -- Wait for bite
+            if waitForBite(rod) then
+                reelIn()
+            end
+            
+            task.wait(Config.RetryDelay)
+        end
+    end
+    
+    AutoFishRunning = false
+    log("Auto Fishing Stopped!")
+end
 
 -- ═══════════════════════════════════════════════════════════
 -- UI CREATION
