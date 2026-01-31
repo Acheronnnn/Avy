@@ -217,17 +217,29 @@ Stroke.Thickness = 1.5
 Stroke.Transparency = 0.5
 Stroke.Parent = MainFrame
 
--- Minimize Button (X)
+-- Minimize Button (-)
 local MinimizeButton = Instance.new("TextButton")
 MinimizeButton.Name = "MinimizeButton"
-MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
-MinimizeButton.Position = UDim2.new(1, -30, 0, 5)
+MinimizeButton.Size = UDim2.new(0, 20, 0, 20)
+MinimizeButton.Position = UDim2.new(1, -50, 0, 5)
 MinimizeButton.BackgroundTransparency = 1
 MinimizeButton.Text = "-"
 MinimizeButton.TextColor3 = Color3.fromRGB(200, 200, 220)
 MinimizeButton.TextSize = 20
 MinimizeButton.Font = Enum.Font.GothamBold
 MinimizeButton.Parent = MainFrame
+
+-- Close Button (X)
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 20, 0, 20)
+CloseButton.Position = UDim2.new(1, -25, 0, 5)
+CloseButton.BackgroundTransparency = 1
+CloseButton.Text = "×"
+CloseButton.TextColor3 = Color3.fromRGB(220, 100, 100)
+CloseButton.TextSize = 18
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.Parent = MainFrame
 
 -- Title Text (AVY)
 local TitleText = Instance.new("TextLabel")
@@ -339,6 +351,13 @@ OpenButton.MouseButton1Click:Connect(function()
     MainFrame.Visible = true
     OpenButton.Visible = false
     IsMinimized = false
+end)
+
+-- Fungsi Close (Tutup script)
+CloseButton.MouseButton1Click:Connect(function()
+    Config.Enabled = false -- Stop auto fishing
+    log("Script closed by user.")
+    ScreenGui:Destroy() -- Hapus UI
 end)
 
 -- Toggle button click handler
